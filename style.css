@@ -19,7 +19,7 @@
     /* UPDATED: Wave colors set to white (increased brightness/opacity) */
     --wave-dot-color: rgb(255, 255, 255); 
     --wave-shadow-color: rgba(255, 255, 255, 0.4); /* Increased opacity */
-    --wave-line-color: rgba(255, 255, 255, 0.15); /* Increased opacity */
+    --wave-line-color: rgba(13, 13, 13, 0.15); /* Increased opacity */
     
     --status-bar-bg: #0d0d0d;
     --mobile-nav-bg: #1c1c1c; 
