@@ -50,15 +50,17 @@
 
         <div class="ide-content">
             
-            <aside class="sidebar">
+            <aside class="sidebar" id="sidebar">
                 <div class="explorer-header">EXPLORER</div>
-                <nav class="explorer-nav">
-                    <a href="#" data-section="hero" class="file-item active" data-filename="index.html">index.html</a>
-                    <a href="#" data-section="about" class="file-item" data-filename="about.ts">about.ts</a>
-                    <a href="#" data-section="experience-work" class="file-item" data-filename="experience.log">experience.log</a>
-                    <a href="#" data-section="projects" class="file-item" data-filename="projects.java">projects.java</a>
-                    <a href="#" data-section="contact" class="file-item" data-filename="contact.sh">contact.sh</a>
-                </nav>
+                    <!-- In the explorer-nav section -->
+                    <nav class="explorer-nav">
+                        <a href="#" data-section="hero" class="file-item active" data-filename="index.html">index.html</a>
+                        <a href="#" data-section="about" class="file-item" data-filename="about.ts">about.ts</a>
+                        <a href="#" data-section="experience-work" class="file-item" data-filename="experience.log">experience.log</a>
+                        <a href="#" data-section="education" class="file-item" data-filename="education.cert">education.cert</a> <!-- ADD THIS -->
+                        <a href="#" data-section="projects" class="file-item" data-filename="projects.java">projects.java</a>
+                        <a href="#" data-section="contact" class="file-item" data-filename="contact.sh">contact.sh</a>
+                    </nav>
             </aside>
 
             <main class="editor-area">
@@ -68,6 +70,10 @@
                         <span class="close-tab">×</span>
                     </div>
                 </div>
+
+                <button id="mobile-nav-toggle" aria-label="Toggle Navigation">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
 
                 <div class="terminal-output" id="terminal-output">
                     
@@ -167,6 +173,7 @@ console.log(Sandeep.bio);
                             </pre>
                         </div>
                     </section>
+                    
                     <section id="projects" class="cli-section">
                         <h3 class="section-title">FEATURED PROJECTS</h3>
                         
@@ -195,7 +202,7 @@ console.log(Sandeep.bio);
                         </div>
                         
                         <div class="project-card" data-project-id="portfolio">
-                             <a href="#" target="_blank" class="project-link">
+                               <a href="#" target="_blank" class="project-link">
                                 <h4 class="project-name">💼 Developer Portfolio <i class="fa-solid fa-code"></i></h4>
                             </a>
                             <p class="project-desc">Modern, responsive portfolio website showcasing my projects and skills. Built with vanilla HTML, CSS, and JavaScript featuring smooth animations and optimized performance.</p>
@@ -208,9 +215,9 @@ console.log(Sandeep.bio);
                     </section>
 
                     <section id="contact" class="cli-section">
-                           <h3 class="section-title">LET'S CONNECT</h3>
-                         <div class="contact-info-list">
-                               <pre class="cli-response">
+                               <h3 class="section-title">LET'S CONNECT</h3>
+                             <div class="contact-info-list">
+                                    <pre class="cli-response">
 // Running 'sudo hire sandeep' command...
 
 const contactDetails = {
@@ -224,16 +231,16 @@ const contactDetails = {
 
 console.log(contactDetails);
 // Status: Ready to build amazing backends.
-                         </pre>
-                         </div>
-                         
-                         <h4 class="section-title">Send Message (Command)</h4>
-                         <div id="cli-history">
+                             </pre>
                              </div>
-                         <div class="cli-input-line">
-                             <span class="cli-user">sandeep@portfolio</span>:<span class="cli-dir">~</span>$ 
-                             <input type="text" id="cli-input" placeholder="Type a command (e.g., show --projects)" autofocus>
-                         </div>
+                             
+                             <h4 class="section-title">Send Message (Command)</h4>
+                             <div id="cli-history">
+                                   </div>
+                             <div class="cli-input-line">
+                                   <span class="cli-user">sandeep@portfolio</span>:<span class="cli-dir">~</span>$ 
+                                   <input type="text" id="cli-input" placeholder="Type a command (e.g., show --projects)" autofocus>
+                             </div>
                     </section>
                 </div>
                 

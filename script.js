@@ -1,46 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     
-    // --- NEW: MOBILE REDIRECT CHECK ---
-    const MOBILE_BREAKPOINT = 768;
-
-    function checkMobileAndRedirect() {
-        if (window.innerWidth <= MOBILE_BREAKPOINT) {
-            // Find or create the overlay element
-            let overlay = document.getElementById('mobile-warning-overlay');
-            if (!overlay) {
-                // If the element doesn't exist (because it wasn't added to the HTML), create it dynamically
-                overlay = document.createElement('div');
-                overlay.id = 'mobile-warning-overlay';
-                overlay.innerHTML = `
-                    <div class="warning-box">
-                        <i class="fa-solid fa-desktop warning-icon"></i>
-                        <h2 class="warning-title">Desktop View Recommended</h2>
-                        <p class="warning-message">This portfolio is designed with a **Terminal/VS Code IDE** interface for the best experience. Please view it on a **desktop or tablet** for proper rendering and interactive functionality.</p>
-                    </div>
-                `;
-                document.body.appendChild(overlay);
-            }
-            // Ensure the overlay is visible (CSS media query should handle this, but force it for safety)
-            overlay.style.display = 'flex';
-            
-            // Hide main content (initial overview and portfolio)
-            const mainPortfolio = document.getElementById('portfolio-main');
-            const overviewScreen = document.getElementById('initial-overview');
-            if (mainPortfolio) mainPortfolio.style.display = 'none';
-            if (overviewScreen) overviewScreen.style.display = 'none';
-
-            // Stop the rest of the script execution (important!)
-            return true; 
-        }
-        return false;
-    }
-
-    // Check on load and resize
-    if (checkMobileAndRedirect()) {
-        window.addEventListener('resize', checkMobileAndRedirect);
-        return; // Stop execution if on mobile
-    }
-    window.addEventListener('resize', checkMobileAndRedirect);
+    const MOBILE_BREAKPOINT = 768; 
     
     // Select all existing elements
     const fileItems = document.querySelectorAll('.file-item');
@@ -51,7 +11,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const overviewScreen = document.getElementById('initial-overview');
     const mainPortfolio = document.getElementById('portfolio-main');
     const terminalOutput = document.getElementById('terminal-output');
-    
+    const sidebar = document.getElementById('sidebar');
+    const mobileNavToggle = document.getElementById('mobile-nav-toggle');
+
     // NEW ELEMENTS
     const accessButton = document.getElementById('access-button');
     const loadingBar = document.querySelector('.loading-bar');
@@ -59,38 +21,48 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- 0. INITIAL OVERVIEW SEQUENCE ---
     const OVERVIEW_DURATION_MS = 5000; 
 
-    // Function to handle the final transition
     function finalizeTransition() {
-        // 1. Animate the click
         accessButton.classList.add('clicking');
         
         setTimeout(() => {
-            // 2. Hide the overview screen
             overviewScreen.classList.add('hidden');
-            
-            // 3. Show the main portfolio UI
             mainPortfolio.classList.add('visible');
-        }, 300); // Wait for the click animation (0.2s + buffer)
+            
+            setTimeout(() => {
+                cliInput.focus();
+            }, 300);
+
+        }, 300); 
     }
 
     // After the loading bar finishes (5 seconds)
     setTimeout(() => {
-        loadingBar.classList.add('hidden');
+        if(loadingBar) loadingBar.classList.add('hidden');
+        if(accessButton) accessButton.classList.add('visible');
         
-        // Show the button and start the pulse animation
-        accessButton.classList.add('visible');
-        
-        // 4. Auto-click the button after a small delay (1 second)
         setTimeout(() => {
-            finalizeTransition();
+            if (overviewScreen && !overviewScreen.classList.contains('hidden')) {
+                finalizeTransition();
+            }
         }, 1000); 
 
     }, OVERVIEW_DURATION_MS);
     
-    // Allow manual click to bypass the final delay
-    accessButton.addEventListener('click', finalizeTransition);
+    if(accessButton) accessButton.addEventListener('click', finalizeTransition);
 
+    // --- MOBILE NAVIGATION LOGIC ---
+    if(mobileNavToggle) {
+        mobileNavToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+        });
+    }
 
+    function closeSidebarOnMobile() {
+        if (window.innerWidth <= MOBILE_BREAKPOINT && sidebar) {
+            sidebar.classList.remove('open');
+        }
+    }
+    
     // --- PROJECT DETAILS ---
     const projectDetails = {
         carease: {
@@ -111,49 +83,48 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     // --- 1. DYNAMIC SECTION CREATION & NAVIGATION SETUP ---
-
-    // 1. Extract raw data from the hidden original #experience section
+    
+    // Only create sections if they don't already exist
     const workCards = Array.from(document.querySelectorAll('#experience .exp-card[data-type="work"]')).map(card => card.outerHTML).join('');
     const eduCertCards = Array.from(document.querySelectorAll('#experience .exp-card[data-type="education"]')).map(card => card.outerHTML).join('');
     
-    // 2. Hide the original combined section
-    document.getElementById('experience').style.display = 'none';
-
-    // 3. Create NEW Work Experience Section
-    const workExperienceSection = document.createElement('section');
-    workExperienceSection.id = 'experience-work';
-    workExperienceSection.classList.add('cli-section');
-    workExperienceSection.innerHTML = `
-        <h3 class="section-title">WORK EXPERIENCE & ACHIEVEMENTS</h3>
-        ${workCards}
-    `;
-    terminalOutput.insertBefore(workExperienceSection, document.getElementById('projects'));
-
-    // 4. Create NEW Education Section
-    const educationSection = document.createElement('section');
-    educationSection.id = 'education';
-    educationSection.classList.add('cli-section');
-    educationSection.innerHTML = `
-        <h3 class="section-title">EDUCATION & CERTIFICATIONS</h3>
-        ${eduCertCards}
-    `;
-    terminalOutput.insertBefore(educationSection, document.getElementById('projects'));
-    
-    // 5. Update Sidebar Navigation Structure
-    const sidebarNav = document.querySelector('.explorer-nav');
-    
-    const originalExperienceItem = document.querySelector('.file-item[data-filename="experience.log"]');
-    if (originalExperienceItem) {
-        originalExperienceItem.setAttribute('data-section', 'experience-work');
-    }
-    
-    const educationItemHTML = `<a href="#" data-section="education" class="file-item" data-filename="education.cert">education.cert</a>`;
-    const projectsItem = document.querySelector('.file-item[data-section="projects"]');
-    if (projectsItem) {
-        projectsItem.insertAdjacentHTML('beforebegin', educationItemHTML);
+    // Hide original experience section
+    const originalExperienceSection = document.getElementById('experience');
+    if (originalExperienceSection) {
+        originalExperienceSection.style.display = 'none';
     }
 
-    // Re-query all interactive elements 
+    // Create work experience section if it doesn't exist
+    if (!document.getElementById('experience-work') && workCards) {
+        const workExperienceSection = document.createElement('section');
+        workExperienceSection.id = 'experience-work';
+        workExperienceSection.classList.add('cli-section');
+        workExperienceSection.innerHTML = `
+            <h3 class="section-title">WORK EXPERIENCE & ACHIEVEMENTS</h3>
+            ${workCards}
+        `;
+        const projectsSection = document.getElementById('projects');
+        if (projectsSection && terminalOutput) {
+            terminalOutput.insertBefore(workExperienceSection, projectsSection);
+        }
+    }
+
+    // Create education section if it doesn't exist
+    if (!document.getElementById('education') && eduCertCards) {
+        const educationSection = document.createElement('section');
+        educationSection.id = 'education';
+        educationSection.classList.add('cli-section');
+        educationSection.innerHTML = `
+            <h3 class="section-title">EDUCATION & CERTIFICATIONS</h3>
+            ${eduCertCards}
+        `;
+        const projectsSection = document.getElementById('projects');
+        if (projectsSection && terminalOutput) {
+            terminalOutput.insertBefore(educationSection, projectsSection);
+        }
+    }
+    
+    // Get all file items after potential DOM modifications
     const newFileItems = document.querySelectorAll('.file-item');
     const newSections = document.querySelectorAll('.cli-section');
 
@@ -166,12 +137,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (targetSection) {
             targetSection.classList.add('active');
             
-            // DESKTOP SCROLL LOGIC
-            const outputArea = document.getElementById('terminal-output');
+            const scrollArea = window.innerWidth > MOBILE_BREAKPOINT ? terminalOutput : mainPortfolio;
+            const scrollOffset = window.innerWidth > MOBILE_BREAKPOINT ? 20 : 0; 
             
-            // For desktop, scroll the output area
-            if (outputArea) {
-                outputArea.scrollTop = targetSection.offsetTop - 20; 
+            if (scrollArea) {
+                // Smooth scrolling
+                scrollArea.scrollTo({
+                    top: targetSection.offsetTop - scrollOffset,
+                    behavior: 'smooth'
+                });
             }
         }
 
@@ -180,7 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Re-apply event listeners for sidebar navigation
+    // Update the file item click event listeners
     newFileItems.forEach(item => {
         item.addEventListener('click', (e) => {
             e.preventDefault(); 
@@ -191,14 +165,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const sectionId = item.getAttribute('data-section');
             const fileName = item.getAttribute('data-filename');
             showSection(sectionId, fileName);
+            
+            // Close sidebar on mobile
+            closeSidebarOnMobile();
         });
     });
 
-    // Re-apply event listeners to project cards
     document.querySelectorAll('.project-card').forEach(card => {
         card.addEventListener('click', function() {
             const projectId = this.getAttribute('data-project-id');
-            // Check if we are in mobile/narrow mode for auto 'cat' command
             if (window.innerWidth <= MOBILE_BREAKPOINT) {
                 executeCommand(`cat ${projectId}`);
                 return;
@@ -209,7 +184,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- 2. INTERACTIVE CLI LOGIC ---
-
     function executeCommand(command) {
         const historyElement = document.createElement('div');
         historyElement.innerHTML = `<div class="cli-prompt"><span class="cli-user">sandeep@portfolio</span>:<span class="cli-dir">~</span>$ ${command}</div>`;
@@ -292,9 +266,6 @@ Status: Read complete.</pre>`;
         historyElement.innerHTML += response;
         cliHistory.appendChild(historyElement);
         
-        const outputArea = document.getElementById('terminal-output');
-        
-        // Scroll the CLI history to the bottom
         cliHistory.scrollTop = cliHistory.scrollHeight;
 
         if (targetSection) {
@@ -303,6 +274,9 @@ Status: Read complete.</pre>`;
                 newFileItems.forEach(i => i.classList.remove('active'));
                 targetItem.classList.add('active');
                 showSection(targetSection, targetItem.getAttribute('data-filename'));
+                
+                // Close sidebar when navigating via commands
+                closeSidebarOnMobile();
             }
         }
     }
@@ -317,179 +291,212 @@ Status: Read complete.</pre>`;
         }
     });
 
-    // Set initial active state (using the updated query for file items)
+    // Initialize with first section
     const initialItem = document.querySelector('.file-item.active');
     if (initialItem) {
         showSection(initialItem.getAttribute('data-section'), initialItem.getAttribute('data-filename'));
     }
 
-
     // --- 3. 3D WAVE CANVAS LOGIC ---
-
     const canvas = document.getElementById('wave-canvas');
-    const ctx = canvas.getContext('2d');
-    let dots = [];
-    const GRID_SIZE = 30;
-    const WAVE_AMPLITUDE = 20;
-    const WAVE_SPEED = 0.005;
-    const PERSPECTIVE_FACTOR = 0.65;
-    const COVERAGE_FACTOR = 1.6;
-    const LINE_MAX_DISTANCE = 150;
-    const RIPPLE_RADIUS = 100;
-    const RIPPLE_FORCE = 30;
-    let animationFrameId;
-    let mouseX = -999;
-    let mouseY = -999;
-    
-    const body = document.body; 
-
-    class Dot {
-        constructor(gridX, gridY) {
-            this.gridX = gridX;
-            this.gridY = gridY;
-            this.baseRadius = 1.5;
-            this.screenX = 0;
-            this.screenY = 0;
-            this.wobbleOffset = Math.random() * 20;
+    if (canvas) {
+        const ctx = canvas.getContext('2d');
+        let dots = [];
+        
+        const DESKTOP_GRID_SIZE = 30; 
+        const MOBILE_GRID_SIZE = 15; 
+        
+        function getGridSize() {
+            return window.innerWidth <= MOBILE_BREAKPOINT ? MOBILE_GRID_SIZE : DESKTOP_GRID_SIZE;
         }
 
-        calculatePosition(centerX, centerY, offsetTime) {
-            const normalizedY = this.gridY / GRID_SIZE;
-            const depth = 1 - normalizedY;
-            const scale = 1 - depth * PERSPECTIVE_FACTOR;
-            const radius = this.baseRadius * scale;
+        const WAVE_AMPLITUDE = 20;
+        const WAVE_SPEED = 0.005;
+        const PERSPECTIVE_FACTOR = 0.65;
+        const COVERAGE_FACTOR = 1.6;
+        const LINE_MAX_DISTANCE = 150; 
+        const RIPPLE_RADIUS = 100;
+        const RIPPLE_FORCE = 30;
+        let animationFrameId;
+        let mouseX = -999;
+        let mouseY = -999;
+        
+        const body = document.body; 
 
-            const turbulenceY = Math.sin(offsetTime * 0.01 + this.wobbleOffset) * 2 * scale;
-
-            let waveY = Math.sin((this.gridX + this.gridY) * 0.5 + offsetTime * WAVE_SPEED) * WAVE_AMPLITUDE * scale;
-            waveY += turbulenceY;
-
-            this.screenX = centerX + (this.gridX - GRID_SIZE / 2) * (canvas.width / GRID_SIZE) * scale * COVERAGE_FACTOR;
-            this.screenY = centerY + (this.gridY - GRID_SIZE / 2) * (canvas.height / GRID_SIZE) * scale * COVERAGE_FACTOR + waveY;
-
-            const distSq = Math.pow(this.screenX - mouseX, 2) + Math.pow(this.screenY - mouseY, 2);
-
-            if (distSq < RIPPLE_RADIUS * RIPPLE_RADIUS) {
-                const dist = Math.sqrt(distSq);
-                const force = (1 - (dist / RIPPLE_RADIUS));
-                this.screenY -= force * RIPPLE_FORCE;
+        class Dot {
+            constructor(gridX, gridY) {
+                this.gridX = gridX;
+                this.gridY = gridY;
+                this.baseRadius = 1.5;
+                this.screenX = 0;
+                this.screenY = 0;
+                this.wobbleOffset = Math.random() * 20;
             }
 
-            return { radius, waveY, scale };
-        }
+            calculatePosition(centerX, centerY, offsetTime, currentGridSize) {
+                const normalizedY = this.gridY / currentGridSize;
+                const depth = 1 - normalizedY;
+                const scale = 1 - depth * PERSPECTIVE_FACTOR;
+                const radius = this.baseRadius * scale;
 
-        draw(centerX, centerY, offsetTime) {
-            const { radius, waveY, scale } = this.calculatePosition(centerX, centerY, offsetTime);
+                const turbulenceY = Math.sin(offsetTime * 0.01 + this.wobbleOffset) * 2 * scale;
 
-            if (radius < 0.1) return;
+                let waveY = Math.sin((this.gridX + this.gridY) * 0.5 + offsetTime * WAVE_SPEED) * WAVE_AMPLITUDE * scale;
+                waveY += turbulenceY;
 
-            const dotColorStr = getComputedStyle(body).getPropertyValue('--wave-dot-color').trim();
-            const shadowColor = getComputedStyle(body).getPropertyValue('--wave-shadow-color');
+                this.screenX = centerX + (this.gridX - currentGridSize / 2) * (canvas.width / currentGridSize) * scale * COVERAGE_FACTOR;
+                this.screenY = centerY + (this.gridY - currentGridSize / 2) * (canvas.height / currentGridSize) * scale * COVERAGE_FACTOR + waveY;
 
-            ctx.globalAlpha = scale * 0.9;
+                const distSq = Math.pow(this.screenX - mouseX, 2) + Math.pow(this.screenY - mouseY, 2);
 
-            const normalizedWaveHeight = Math.abs(waveY) / WAVE_AMPLITUDE;
+                if (distSq < RIPPLE_RADIUS * RIPPLE_RADIUS) {
+                    const dist = Math.sqrt(distSq);
+                    const force = (1 - (dist / RIPPLE_RADIUS));
+                    this.screenY -= force * RIPPLE_FORCE;
+                }
 
-            ctx.shadowBlur = radius * 7 * normalizedWaveHeight * scale;
-            ctx.shadowColor = shadowColor;
-
-            ctx.beginPath();
-            ctx.arc(this.screenX, this.screenY, radius, 0, Math.PI * 2, false);
-            ctx.fillStyle = dotColorStr;
-            ctx.fill();
-
-            ctx.shadowBlur = 0;
-            ctx.shadowColor = 'transparent';
-            ctx.globalAlpha = 1;
-        }
-    }
-
-    function initDots() {
-        dots = [];
-        for (let y = 0; y < GRID_SIZE; y++) {
-            for (let x = 0; x < GRID_SIZE; x++) {
-                dots.push(new Dot(x, y));
-            }
-        }
-    }
-
-    function drawLines() {
-        const lineColor = getComputedStyle(body).getPropertyValue('--wave-line-color');
-        ctx.strokeStyle = lineColor;
-        ctx.lineWidth = 1;
-
-        for (let i = 0; i < dots.length; i++) {
-            const currentDot = dots[i];
-
-            if (currentDot.gridX < GRID_SIZE - 1) {
-                const rightDot = dots[i + 1];
-                connectDots(currentDot, rightDot);
+                return { radius, waveY, scale };
             }
 
-            if (currentDot.gridY < GRID_SIZE - 1) {
-                const bottomDot = dots[i + GRID_SIZE];
-                connectDots(currentDot, bottomDot);
+            draw(centerX, centerY, offsetTime, currentGridSize) {
+                const { radius, waveY, scale } = this.calculatePosition(centerX, centerY, offsetTime, currentGridSize);
+
+                if (radius < 0.1) return;
+
+                const dotColorStr = getComputedStyle(body).getPropertyValue('--wave-dot-color').trim();
+                const shadowColor = getComputedStyle(body).getPropertyValue('--wave-shadow-color');
+
+                ctx.globalAlpha = scale * 0.9;
+
+                const normalizedWaveHeight = Math.abs(waveY) / WAVE_AMPLITUDE;
+
+                // Conditional shadow application/blur reduction for performance
+                if (window.innerWidth > MOBILE_BREAKPOINT) { 
+                    ctx.shadowBlur = radius * 7 * normalizedWaveHeight * scale;
+                    ctx.shadowColor = shadowColor;
+                } else {
+                    ctx.shadowBlur = radius * 3 * normalizedWaveHeight * scale; 
+                    ctx.shadowColor = shadowColor;
+                }
+
+                ctx.beginPath();
+                ctx.arc(this.screenX, this.screenY, radius, 0, Math.PI * 2, false);
+                ctx.fillStyle = dotColorStr;
+                ctx.fill();
+
+                ctx.shadowBlur = 0;
+                ctx.shadowColor = 'transparent';
+                ctx.globalAlpha = 1;
             }
         }
-    }
 
-    function connectDots(dotA, dotB) {
-        const dist = Math.hypot(dotA.screenX - dotB.screenX, dotA.screenY - dotB.screenY);
-
-        if (dist < LINE_MAX_DISTANCE) {
-            ctx.beginPath();
-            ctx.moveTo(dotA.screenX, dotA.screenY);
-            ctx.lineTo(dotB.screenX, dotB.screenY);
-
-            const scaleFactor = (dotA.gridY / GRID_SIZE + dotB.gridY / GRID_SIZE) / 2;
-            const alpha = 1 - (dist / LINE_MAX_DISTANCE);
-            ctx.globalAlpha = alpha * scaleFactor * 0.7; // Increased line brightness
-
-            ctx.stroke();
-            ctx.globalAlpha = 1;
+        function initDots(currentGridSize) {
+            dots = [];
+            for (let y = 0; y < currentGridSize; y++) {
+                for (let x = 0; x < currentGridSize; x++) {
+                    dots.push(new Dot(x, y));
+                }
+            }
         }
+
+        function drawLines(currentGridSize) {
+            const lineColor = getComputedStyle(body).getPropertyValue('--wave-line-color');
+            ctx.strokeStyle = lineColor;
+            ctx.lineWidth = 1;
+            
+            const totalDots = currentGridSize * currentGridSize;
+
+            for (let i = 0; i < dots.length; i++) {
+                const currentDot = dots[i];
+                
+                // Check for connection to the right
+                const rightIndex = i + 1;
+                if (currentDot.gridX < currentGridSize - 1 && rightIndex < totalDots) {
+                    const rightDot = dots[rightIndex];
+                    if (rightDot) { 
+                        connectDots(currentDot, rightDot, currentGridSize);
+                    }
+                }
+
+                // Check for connection to the bottom
+                const bottomIndex = i + currentGridSize;
+                if (currentDot.gridY < currentGridSize - 1 && bottomIndex < totalDots) {
+                    const bottomDot = dots[bottomIndex];
+                    if (bottomDot) { 
+                        connectDots(currentDot, bottomDot, currentGridSize);
+                    }
+                }
+            }
+        }
+
+        function connectDots(dotA, dotB, currentGridSize) {
+            const dist = Math.hypot(dotA.screenX - dotB.screenX, dotA.screenY - dotB.screenY);
+
+            if (dist < LINE_MAX_DISTANCE) {
+                ctx.beginPath();
+                ctx.moveTo(dotA.screenX, dotA.screenY);
+                ctx.lineTo(dotB.screenX, dotB.screenY);
+
+                const scaleFactor = (dotA.gridY / currentGridSize + dotB.gridY / currentGridSize) / 2;
+                const alpha = 1 - (dist / LINE_MAX_DISTANCE);
+                ctx.globalAlpha = alpha * scaleFactor * 0.7; 
+
+                ctx.stroke();
+                ctx.globalAlpha = 1;
+            }
+        }
+
+        function animateWave(time) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const currentGridSize = getGridSize();
+            
+            // Reinitialize if grid size unexpectedly changes during animation
+            if (dots.length !== currentGridSize * currentGridSize) {
+                initDots(currentGridSize);
+            }
+
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+
+            dots.forEach(dot => {
+                dot.calculatePosition(centerX, centerY, time, currentGridSize);
+            });
+
+            drawLines(currentGridSize);
+
+            dots.sort((a, b) => a.gridY - b.gridY);
+            
+            dots.forEach(dot => {
+                dot.draw(centerX, centerY, time, currentGridSize);
+            });
+
+            animationFrameId = requestAnimationFrame(animateWave);
+        }
+
+        function resizeCanvas() {
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            initDots(getGridSize()); 
+            animateWave(0);
+        }
+
+        function handleMouseMove(e) {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        }
+
+        function handleMouseOut() {
+            mouseX = -999;
+            mouseY = -999;
+        }
+        
+        window.addEventListener('resize', resizeCanvas);
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseleave', handleMouseOut);
+        
+        resizeCanvas();
     }
-
-    function animateWave(time) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        const centerX = canvas.width / 2;
-        const centerY = canvas.height / 2;
-
-        dots.forEach(dot => {
-            dot.calculatePosition(centerX, centerY, time);
-        });
-
-        drawLines();
-
-        dots.forEach(dot => {
-            dot.draw(centerX, centerY, time);
-        });
-
-        animationFrameId = requestAnimationFrame(animateWave);
-    }
-
-    function resizeCanvas() {
-        if (animationFrameId) cancelAnimationFrame(animationFrameId);
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        initDots();
-        animateWave(0);
-    }
-
-    function handleMouseMove(e) {
-        mouseX = e.clientX;
-        mouseY = e.clientY;
-    }
-
-    function handleMouseOut() {
-        mouseX = -999;
-        mouseY = -999;
-    }
-    
-    window.addEventListener('resize', resizeCanvas);
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseleave', handleMouseOut);
-    
-    resizeCanvas();
 });
